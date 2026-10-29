@@ -1,0 +1,4 @@
+project_id     = "mon-projet-gcp"
+project_prefix = "vibe-poc"
+region         = "europe-west9"
+zone           = "europe-west9-a"
