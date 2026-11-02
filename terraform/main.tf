@@ -26,7 +26,7 @@ resource "google_compute_instance" "ad" {
     "block-project-ssh-keys"     = "TRUE"
   }
 
-  depends_on = [google_compute_router_nat.poc, google_compute_firewall.admin_rdp]
+  depends_on = [google_compute_router_nat.poc, google_compute_firewall.gateway_ad_rdp]
 }
 
 resource "google_compute_instance" "gateway" {
@@ -58,7 +58,7 @@ resource "google_compute_instance" "gateway" {
     "block-project-ssh-keys" = "TRUE"
   }
 
-  depends_on = [google_compute_firewall.admin_ssh]
+  depends_on = [google_compute_firewall.admin_rdp_gateway, google_compute_firewall.https]
 }
 
 resource "google_compute_instance" "dev" {
@@ -82,7 +82,6 @@ resource "google_compute_instance" "dev" {
   network_interface {
     subnetwork = google_compute_subnetwork.poc.id
     network_ip = "10.20.0.12"
-    access_config {} # IP publique
   }
 
   metadata = {
@@ -90,7 +89,10 @@ resource "google_compute_instance" "dev" {
     "block-project-ssh-keys" = "TRUE"
   }
 
-  depends_on = [google_compute_router_nat.poc, google_compute_firewall.admin_ssh]
+  depends_on = [
+    google_compute_router_nat.poc, google_compute_firewall.dev_rdp,
+    google_compute_firewall.ansible_ssh,
+  ]
 }
 
 resource "google_compute_instance" "ansible" {

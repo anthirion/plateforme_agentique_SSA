@@ -59,22 +59,18 @@ resource "google_compute_firewall" "admin_ssh" {
   name          = "${var.project_prefix}-admin-ssh"
   network       = google_compute_network.poc.id
   source_ranges = ["${local.cidr_24}"]
-  target_tags = [
-    "${var.project_prefix}-gateway",
-    "${var.project_prefix}-dev",
-    "${var.project_prefix}-ansible",
-  ]
+  target_tags   = ["${var.project_prefix}-ansible"]
   allow {
     protocol = "tcp"
     ports    = ["22"]
   }
 }
 
-resource "google_compute_firewall" "admin_rdp" {
-  name          = "${var.project_prefix}-admin-rdp-ad"
+resource "google_compute_firewall" "admin_rdp_gateway" {
+  name          = "${var.project_prefix}-admin-rdp-gateway"
   network       = google_compute_network.poc.id
   source_ranges = ["${local.cidr_24}"]
-  target_tags   = ["${var.project_prefix}-ad"]
+  target_tags   = ["${var.project_prefix}-gateway"]
   allow {
     protocol = "tcp"
     ports    = ["3389"]
@@ -100,6 +96,17 @@ resource "google_compute_firewall" "dev_rdp" {
   network     = google_compute_network.poc.id
   source_tags = ["${var.project_prefix}-gateway"]
   target_tags = ["${var.project_prefix}-dev"]
+  allow {
+    protocol = "tcp"
+    ports    = ["3389"]
+  }
+}
+
+resource "google_compute_firewall" "gateway_ad_rdp" {
+  name        = "${var.project_prefix}-gateway-ad-rdp"
+  network     = google_compute_network.poc.id
+  source_tags = ["${var.project_prefix}-gateway"]
+  target_tags = ["${var.project_prefix}-ad"]
   allow {
     protocol = "tcp"
     ports    = ["3389"]
