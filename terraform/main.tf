@@ -2,6 +2,11 @@ locals {
   vm_user = "antoine_thirion_wavestone_com"
 }
 
+resource "tls_private_key" "ansible_ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "google_compute_instance" "ad" {
   name         = "${var.project_prefix}-ad"
   machine_type = "e2-standard-2" # 2 vCPU, 8 Go RAM
@@ -58,8 +63,9 @@ resource "google_compute_instance" "gateway" {
   }
 
   metadata = {
-    "enable-oslogin"         = "TRUE"
+    "enable-oslogin"         = "FALSE"
     "block-project-ssh-keys" = "TRUE"
+    "ssh-keys"               = "${local.vm_user}:${tls_private_key.ansible_ssh_key.public_key_openssh}"
   }
 
   depends_on = [google_compute_firewall.admin_rdp_gateway, google_compute_firewall.https]
@@ -89,8 +95,9 @@ resource "google_compute_instance" "dev" {
   }
 
   metadata = {
-    "enable-oslogin"         = "TRUE"
+    "enable-oslogin"         = "FALSE"
     "block-project-ssh-keys" = "TRUE"
+    "ssh-keys"               = "${local.vm_user}:${tls_private_key.ansible_ssh_key.public_key_openssh}"
   }
 
   depends_on = [
@@ -123,27 +130,35 @@ resource "google_compute_instance" "ansible" {
     access_config {} # IP publique
   }
 
-  # Copy files of the ansible/ directory to the remote dev VM in the /opt/ directory
+  connection {
+    type        = "ssh"
+    host        = self.network_interface[0].access_config[0].nat_ip
+    user        = local.vm_user
+    private_key = file("//wsl.localhost/Ubuntu-22.04/home/anthirion/.ssh/id_rsa")
+    timeout     = "3m"
+  }
+
+
+  # Copier le dossier ansible/ sur le contrôleur
   provisioner "file" {
     source      = "${path.root}/../ansible"
     destination = "/home/${local.vm_user}"
+  }
 
-    connection {
-      type        = "ssh"
-      host        = self.network_interface[0].access_config[0].nat_ip
-      user        = local.vm_user
-      private_key = file("//wsl.localhost/Ubuntu-22.04/home/anthirion/.ssh/id_rsa")
-      timeout     = "3m"
-    }
-
-    when       = create
-    on_failure = fail
+  # Transférer la clé vers un emplacement temporaire avant son installation au démarrage.
+  provisioner "file" {
+    content     = tls_private_key.ansible_ssh_key.private_key_openssh
+    destination = "/home/${local.vm_user}/ansible-ssh-key.pending"
   }
 
   metadata = {
     "enable-oslogin"         = "TRUE"
     "block-project-ssh-keys" = "TRUE"
-    "startup-script"         = file("${path.module}/scripts/install-ansible.sh")
+    "ansible-user"           = local.vm_user
+    "startup-script" = join("\n", [
+      file("${path.module}/scripts/install-ansible.sh"),
+      file("${path.module}/scripts/configure-ansible-ssh.sh"),
+    ])
   }
 
   depends_on = [google_compute_router_nat.poc, google_compute_firewall.admin_ssh]
