@@ -42,7 +42,14 @@ flowchart TB
 
 Quatre ressources VM explicites dans `terraform/main.tf`, tailles et images en dur. Seule la gateway possède une IP publique éphémère ; AD, dev et le contrôleur restent privés. `network.tf` contient le VPC, sous-réseau, pare-feu et NAT pour les sorties des VM privées. Pas de création de comptes de service ni d'activation d'API par Terraform.
 
-**Aucun conteneur** : les rôles maison de `ansible/` installent Guacamole, guacd, Tomcat, PostgreSQL et Nginx nativement, ainsi que XFCE/xrdp sur dev. Aucun rôle Galaxy. AD conserve `terraform/scripts/ad.ps1` ; le script de démarrage du contrôleur installe Ansible Core. Les services Linux sont configurés par Ansible.
+**Aucun conteneur** : les rôles maison de `ansible/` installent Guacamole, guacd, Tomcat, PostgreSQL et Nginx nativement, ainsi que XFCE/xrdp sur dev. Aucun rôle Galaxy. Le premier démarrage Linux installe Ansible sur le contrôleur et y configure sa clé SSH ; seul AD conserve un script de démarrage spécifique, `terraform/scripts/ad.ps1`.
+
+### Décisions d'architecture SSH / Ansible
+
+- OS Login est activé sur la VM contrôleur Ansible pour son accès d'administration.
+- Terraform génère une paire de clés SSH RSA (4096 bits). La clé privée est transférée sur le contrôleur dans `/home/antoine_thirion_wavestone_com/.ssh/id_ed25519`, avec des permissions réservées à son utilisateur. La clé publique est configurée sur les autres VM Linux, gateway et dev.
+- OS Login est désactivé sur gateway et dev afin que ces VM acceptent la clé publique fournie par leurs métadonnées d'instance. Le contrôleur utilise la clé privée pour s'y connecter en SSH sur le réseau privé et exécuter les playbooks.
+- La clé privée étant conservée dans l'état Terraform, celui-ci doit être protégé et ne doit pas être versionné.
 
 Le préfixe des noms et tags est configurable avec `project_prefix` (exemple : `vibe-poc`, sans tiret final). Les commandes ci-dessous utilisent cet exemple.
 
@@ -61,7 +68,7 @@ terraform apply poc.tfplan
 terraform output
 ```
 
-Terraform provisionne les quatre VM et le réseau, et prépare Windows via son script. Suivre ensuite [le guide Ansible](ansible/README.md) pour préparer le contrôleur, enregistrer sa clé OS Login, transférer l'inventaire et configurer Linux avec `site.yml`.
+Terraform provisionne les quatre VM et le réseau, prépare Windows via son script, installe Ansible sur le contrôleur et y copie les fichiers Ansible. Après le déploiement, suivre [le guide Ansible](ansible/README.md) pour transférer l'inventaire et configurer Linux avec `site.yml` ; Terraform ne lance pas les playbooks.
 
 **IP dynamique** : `local.my_ip` est récupérée via `https://checkip.amazonaws.com` à chaque nouveau plan et normalisée en réseau `/24` avec `cidrsubnet("${local.my_ip}/24", 0, 0)` pour HTTPS sur la gateway, SSH admin et RDP admin vers AD (ex. `203.0.113.10` → `203.0.113.0/24`). Ces règles autorisent tout le réseau, pas uniquement votre adresse. Après un changement de réseau de sortie, relancer `plan` puis `apply`. Un plan enregistré conserve le réseau du moment du plan ; ne pas réutiliser un ancien plan. Avec un VPN/proxy ou une CI, c'est leur IP de sortie qui est détectée. Les règles admin actuelles n'autorisent pas les relais IAP.
 
