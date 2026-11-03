@@ -1,20 +1,3 @@
-data "http" "my_ip" {
-  url                = "https://checkip.amazonaws.com"
-  request_timeout_ms = 10000
-
-  lifecycle {
-    postcondition {
-      condition     = self.status_code == 200 && can(cidrnetmask("${trimspace(self.response_body)}/32"))
-      error_message = "Le service AWS checkip doit renvoyer une adresse IPv4 valide."
-    }
-  }
-}
-
-locals {
-  my_ip   = trimspace(data.http.my_ip.response_body)
-  cidr_24 = "${join(".", slice(split(".", local.my_ip), 0, 3))}.0/24"
-}
-
 resource "google_compute_network" "poc" {
   name                    = "${var.project_prefix}-vpc"
   auto_create_subnetworks = false
@@ -47,7 +30,7 @@ resource "google_compute_router_nat" "poc" {
 resource "google_compute_firewall" "https" {
   name          = "${var.project_prefix}-https"
   network       = google_compute_network.poc.id
-  source_ranges = ["${local.cidr_24}"]
+  source_ranges = ["0.0.0.0/0"]
   target_tags   = ["${var.project_prefix}-gateway"]
   allow {
     protocol = "tcp"
@@ -58,7 +41,7 @@ resource "google_compute_firewall" "https" {
 resource "google_compute_firewall" "admin_ssh" {
   name          = "${var.project_prefix}-admin-ssh"
   network       = google_compute_network.poc.id
-  source_ranges = ["${local.cidr_24}"]
+  source_ranges = ["0.0.0.0/0"]
   target_tags   = ["${var.project_prefix}-ansible"]
   allow {
     protocol = "tcp"
@@ -69,7 +52,7 @@ resource "google_compute_firewall" "admin_ssh" {
 resource "google_compute_firewall" "admin_rdp_gateway" {
   name          = "${var.project_prefix}-admin-rdp-gateway"
   network       = google_compute_network.poc.id
-  source_ranges = ["${local.cidr_24}"]
+  source_ranges = ["0.0.0.0/0"]
   target_tags   = ["${var.project_prefix}-gateway"]
   allow {
     protocol = "tcp"
