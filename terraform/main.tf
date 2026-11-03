@@ -1,3 +1,7 @@
+locals {
+  vm_user = "antoine_thirion_wavestone_com"
+}
+
 resource "google_compute_instance" "ad" {
   name         = "${var.project_prefix}-ad"
   machine_type = "e2-standard-2" # 2 vCPU, 8 Go RAM
@@ -117,6 +121,23 @@ resource "google_compute_instance" "ansible" {
     subnetwork = google_compute_subnetwork.poc.id
     network_ip = "10.20.0.13"
     access_config {} # IP publique
+  }
+
+  # Copy files of the ansible/ directory to the remote dev VM in the /opt/ directory
+  provisioner "file" {
+    source      = "${path.root}/../ansible"
+    destination = "/home/${local.vm_user}"
+
+    connection {
+      type        = "ssh"
+      host        = self.network_interface[0].access_config[0].nat_ip
+      user        = local.vm_user
+      private_key = file("//wsl.localhost/Ubuntu-22.04/home/anthirion/.ssh/id_rsa")
+      timeout     = "3m"
+    }
+
+    when       = create
+    on_failure = fail
   }
 
   metadata = {
