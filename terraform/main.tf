@@ -143,6 +143,7 @@ resource "google_compute_instance" "ansible" {
   metadata = {
     "enable-oslogin"         = "TRUE"
     "block-project-ssh-keys" = "TRUE"
+    "startup-script"         = file("${path.module}/scripts/install-ansible.sh")
   }
 
   depends_on = [google_compute_router_nat.poc, google_compute_firewall.admin_ssh]
