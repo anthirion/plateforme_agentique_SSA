@@ -1,0 +1,11 @@
+---
+- name: Recharger firewalld
+  ansible.builtin.command: firewall-cmd --reload
+
+- name: Redémarrer les services RDP
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - xrdp-sesman
+    - xrdp

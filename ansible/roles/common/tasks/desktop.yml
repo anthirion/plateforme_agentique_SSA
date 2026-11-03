@@ -1,0 +1,52 @@
+---
+- name: Installer XFCE, Xorg et les composants xrdp
+  ansible.builtin.dnf:
+    name:
+      - '@Xfce'
+      - '@base-x'
+      - xorg-x11-server-Xorg
+      - dbus-x11
+      - xrdp
+      - xorgxrdp
+      - xrdp-selinux
+    state: present
+
+- name: Configurer les sessions xrdp pour démarrer XFCE
+  ansible.builtin.copy:
+    dest: /etc/xrdp/startwm.sh
+    owner: root
+    group: root
+    mode: '0755'
+    content: |
+      #!/bin/sh
+      exec dbus-run-session -- startxfce4
+  notify: Redémarrer les services RDP
+
+- name: Restaurer le contexte SELinux du lanceur xrdp
+  ansible.builtin.command: restorecon -v /etc/xrdp/startwm.sh
+  register: common_xrdp_context
+  changed_when: common_xrdp_context.stdout | length > 0
+
+- name: Lire la cible systemd par défaut
+  ansible.builtin.command: systemctl get-default
+  register: common_default_target
+  changed_when: false
+
+- name: Démarrer en mode graphique par défaut
+  ansible.builtin.command: systemctl set-default graphical.target
+  when: common_default_target.stdout | trim != 'graphical.target'
+
+- name: Activer les services xrdp
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - xrdp-sesman
+    - xrdp
+
+- name: Vérifier que xrdp écoute sur le port RDP
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 3389
+    timeout: 30

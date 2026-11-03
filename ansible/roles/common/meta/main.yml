@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: Antoine Thirion
+  description: Préparation des dépôts, outils et du pare-feu sur AlmaLinux 9.
+  license: MIT
+  min_ansible_version: '2.14'
+  platforms:
+    - name: EL
+      versions: ['9']
+  galaxy_tags: [almalinux, system, firewall]
+
+dependencies: []

@@ -1,0 +1,12 @@
+---
+- name: Appliquer la configuration de base aux VM AlmaLinux
+  hosts: all
+  become: true
+  roles:
+    - common
+
+# - name: Configurer le relais SSH vers dev
+#   hosts: gateways
+#   become: true
+#   roles:
+#     - ssh_gateway

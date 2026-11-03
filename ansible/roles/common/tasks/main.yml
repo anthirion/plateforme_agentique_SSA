@@ -1,0 +1,59 @@
+---
+- name: Vérifier la distribution cible
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'AlmaLinux'
+      - ansible_facts.distribution_major_version == '9'
+    fail_msg: "Ces rôles ciblent AlmaLinux 9"
+
+- name: Installer les outils communs
+  ansible.builtin.dnf:
+    name:
+      - dnf-plugins-core
+      - firewalld
+      - openssh-server
+      - openssl
+      - policycoreutils-python-utils
+      - tar
+      - gzip
+    state: present
+
+- name: Lire les dépôts actifs
+  ansible.builtin.command: dnf repolist --enabled
+  register: common_repos
+  changed_when: false
+
+- name: Activer CRB pour les dépendances EPEL
+  ansible.builtin.command: dnf config-manager --set-enabled crb
+  when: common_repos.stdout is not search('(?m)^crb\s')
+
+- name: Activer EPEL
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+
+- name: Activer le pare-feu local
+  ansible.builtin.systemd_service:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Activer SSH sur les cibles Linux
+  ansible.builtin.systemd_service:
+    name: sshd
+    enabled: true
+    state: started
+
+- name: Vérifier qu'une règle autorisant SSH sur le pare-feu local existe
+  ansible.builtin.command: firewall-cmd --permanent --query-service=ssh
+  register: common_ssh_firewall
+  changed_when: false
+  failed_when: false
+
+- name: Autoriser SSH dans firewalld
+  ansible.builtin.command: firewall-cmd --permanent --add-service=ssh
+  when: common_ssh_firewall.rc != 0
+  notify: Recharger firewalld
+
+- name: Installer et configurer le bureau graphique
+  ansible.builtin.include_tasks: desktop.yml

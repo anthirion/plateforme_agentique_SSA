@@ -1,0 +1,5 @@
+[gateways]
+gateway ansible_host=10.20.0.11
+
+[development]
+dev ansible_host=10.20.0.12
