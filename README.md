@@ -42,7 +42,7 @@ flowchart TB
 
 Quatre ressources VM explicites dans `terraform/main.tf`, tailles et images en dur. Seule la gateway possède une IP publique éphémère ; AD, dev et le contrôleur restent privés. `network.tf` contient le VPC, sous-réseau, pare-feu et NAT pour les sorties des VM privées. Pas de création de comptes de service ni d'activation d'API par Terraform.
 
-**Aucun conteneur** : les rôles maison de `ansible/` installent Guacamole, guacd, Tomcat, PostgreSQL et Nginx nativement, ainsi que XFCE/xrdp sur dev. Aucun rôle Galaxy. Aucun script de démarrage Linux ; seul AD conserve `terraform/scripts/ad.ps1`. Le contrôleur Ansible est préparé une fois manuellement en SSH via IAP.
+**Aucun conteneur** : les rôles maison de `ansible/` installent Guacamole, guacd, Tomcat, PostgreSQL et Nginx nativement, ainsi que XFCE/xrdp sur dev. Aucun rôle Galaxy. AD conserve `terraform/scripts/ad.ps1` ; le script de démarrage du contrôleur installe Ansible Core. Les services Linux sont configurés par Ansible.
 
 Le préfixe des noms et tags est configurable avec `project_prefix` (exemple : `vibe-poc`, sans tiret final). Les commandes ci-dessous utilisent cet exemple.
 

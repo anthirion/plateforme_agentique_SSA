@@ -2,7 +2,7 @@
 
 - Objectif : PoC GCP d'une plateforme de vibe-coding, puis cible self-hostée sur VM et services natifs.
 - Répondre et documenter en français, à l'essentiel.
-- Infrastructure dans `terraform/`, configuration Linux dans `ansible/`. Seul AD conserve un script de démarrage.
+- Infrastructure dans `terraform/`, configuration Linux dans `ansible/`. Les scripts de démarrage sont limités à la préparation AD et à l'installation d'Ansible sur le contrôleur ; les autres services Linux sont configurés par rôles Ansible.
 - Aucun conteneur : Guacamole/guacd, Tomcat, PostgreSQL et Nginx natifs. Rôles Ansible locaux, uniquement modules `ansible.builtin`, aucun rôle Galaxy ni collection externe. Configurer firewalld via les commandes natives avec vérification préalable et handler de rechargement.
 - Ne pas supprimer ni réinitialiser les données d'une ancienne installation ; migration séparée, privilégier des VM neuves.
 - Garder le PoC simple : quatre ressources VM explicites, dont un contrôleur Ansible AlmaLinux sans GUI ; tailles en dur dans `main.tf`, pas d'activation d'API ni de comptes de service dédiés. Détecter l'IP utilisateur via AWS checkip à chaque plan.
