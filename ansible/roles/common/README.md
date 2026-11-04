@@ -1,15 +1,28 @@
 # Rôle `common`
 
-Ce rôle prépare uniquement les VM AlmaLinux 9 en installant les outils communs, SSH et un bureau XFCE accessible en RDP.
+Prépare les VM AlmaLinux 9 pour leur administration et, lorsqu'un bureau est installé, leur accès graphique XFCE par RDP. Le rôle configure les outils de base, SSH, le pare-feu, le compte desktop et xrdp.
 
 ## Prérequis
 
-- La VM cible doit utiliser AlmaLinux 9 (`Vérifier la distribution cible`).
+- Les hôtes gérés utilisent AlmaLinux 9.
+- Le contrôleur dispose d'Ansible Core et de `passlib`. Ces dépendances sont installées lors de sa préparation par `terraform/scripts/install-ansible.sh`.
+- Le fichier de secrets Ansible Vault et sa clé locale doivent être disponibles pour déchiffrer les identifiants desktop.
 
-## Tâches
+## Architecture et sécurité
 
-- Installation des outils communs (`dnf-plugins-core`, `firewalld`, `openssh-server`, `openssl`, `policycoreutils-python-utils`, `tar`, `gzip`).
-- Activation des dépôts CRB et EPEL.
-- Activation de SSH et ajout de la règle firewalld si nécessaire.
-- Installation de XFCE, Xorg, xrdp et de ses composants Xorg.
-- Configuration de xrdp pour lancer les sessions sous XFCE.
+Le nom du compte et son mot de passe sont définis dans `default/desktop_user.yml`. Le mot de passe y est chiffré avec Ansible Vault ; le compte système reçoit un hash SHA-512 à sel stable, ce qui rend les exécutions répétées idempotentes. Le compte sert aux sessions XFCE via xrdp.
+
+## Structure du rôle
+
+```text
+common/
+├── default/
+│   └── desktop_user.yml  # Identifiants desktop protégés par Vault
+├── handlers/
+│   └── main.yml          # Actions de redémarrage des services
+├── meta/
+│   └── main.yml          # Métadonnées du rôle
+└── tasks/
+    ├── main.yml          # Préparation commune des VM AlmaLinux
+    └── desktop.yml       # Compte desktop, XFCE et accès xrdp
+```

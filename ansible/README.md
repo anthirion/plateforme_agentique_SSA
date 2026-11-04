@@ -36,7 +36,7 @@ gcloud compute ssh $controller --project=$project --zone=$zone
 
 Le contrôleur conserve une IP publique pour SSH direct, filtré par le `/24` de sortie détecté par AWS. Sur une image neuve, il utilise le serveur SSH de l'image AlmaLinux. En cas d'échec, ajouter `--troubleshoot` à la commande pour vérifier IAM et le réseau ; vérifier sshd/firewalld via la console série si nécessaire.
 
-Ansible Core et Python sont installés automatiquement au premier démarrage par `terraform/scripts/install-ansible.sh`. Le script ne lance aucun playbook. Vérifier son exécution avec `ansible --version` après connexion. Puis générer une clé SSH pour les connexions privées du contrôleur :
+Ansible Core, Python et `passlib` sont installés automatiquement au premier démarrage par `terraform/scripts/install-ansible.sh`. Le script ne lance aucun playbook. Sur un contrôleur existant, installer `epel-release` puis `python3-passlib` avec `dnf`. Vérifier son exécution avec `ansible --version` après connexion. Puis générer une clé SSH pour les connexions privées du contrôleur :
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519

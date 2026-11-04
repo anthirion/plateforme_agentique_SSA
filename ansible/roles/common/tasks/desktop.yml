@@ -1,4 +1,19 @@
 ---
+- name: Charger les identifiants du compte desktop
+  ansible.builtin.include_vars:
+    file: "{{ role_path }}/default/desktop_user.yml"
+    name: desktop_user
+  # no_log: true
+
+- name: Créer le compte desktop
+  ansible.builtin.user:
+    name: "{{ desktop_user.user }}"
+    password: "{{ desktop_user.password | string | password_hash('sha512', (desktop_user.user | hash('sha256'))[:16], rounds=656000) }}"
+    create_home: true
+    shell: /bin/bash
+    state: present
+  # no_log: true
+
 - name: Installer XFCE, Xorg et les composants xrdp
   ansible.builtin.dnf:
     name:
