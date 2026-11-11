@@ -1,6 +1,6 @@
 # Rôle `common`
 
-Prépare les VM AlmaLinux 9 pour leur administration et, lorsqu'un bureau est installé, leur accès graphique XFCE par RDP. Le rôle configure les outils de base, SSH, le pare-feu, le compte desktop et xrdp.
+Prépare les VM AlmaLinux 9 pour leur administration et leur accès graphique XFCE par RDP. Le rôle configure les outils de base, SSH, le pare-feu, le compte desktop et xrdp. Sur les hôtes du groupe `gateways`, il installe aussi le client FreeRDP (`xfreerdp`) pour ouvrir une session vers la VM de développement via son IP privée.
 
 ## Prérequis
 
@@ -24,5 +24,7 @@ common/
 │   └── main.yml          # Métadonnées du rôle
 └── tasks/
     ├── main.yml          # Préparation commune des VM AlmaLinux
-    └── desktop.yml       # Compte desktop, XFCE et accès xrdp
+    └── desktop.yml       # Compte desktop, XFCE/xrdp et client RDP gateway
 ```
+
+#TODO: modifie la disposition du clavier en azerty

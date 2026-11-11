@@ -3,7 +3,7 @@
   ansible.builtin.include_vars:
     file: "{{ role_path }}/default/desktop_user.yml"
     name: desktop_user
-  # no_log: true
+  no_log: true
 
 - name: Créer le compte desktop
   ansible.builtin.user:
@@ -12,7 +12,7 @@
     create_home: true
     shell: /bin/bash
     state: present
-  # no_log: true
+  no_log: true
 
 - name: Installer XFCE, Xorg et les composants xrdp
   ansible.builtin.dnf:
@@ -25,6 +25,12 @@
       - xorgxrdp
       - xrdp-selinux
     state: present
+
+- name: Installer le client FreeRDP sur la gateway
+  ansible.builtin.dnf:
+    name: freerdp
+    state: present
+  when: "'gateways' in group_names"
 
 - name: Configurer les sessions xrdp pour démarrer XFCE
   ansible.builtin.copy:
